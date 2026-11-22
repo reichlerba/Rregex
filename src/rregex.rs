@@ -13,7 +13,7 @@
 // Regular expressions can be implemented internally using 
 // an NFA structure of nodes and state transitions.
 
-use std::collections::HashSet;
+#[derive(Clone, Debug)]
 pub struct Rregex {
     nodes: Vec<Node>,       // All Node objects owned by this Rregex.
     start: NodeID,           // Index into nodes.
@@ -129,7 +129,26 @@ impl Rregex {
     }
 
     pub fn concat(first: Rregex, second: Rregex) -> Self {
-        //
+
+        // Check if either recognizes empty set (nothing).
+        if first.accept.is_none() || second.accept.is_none() {
+            return Rregex::get_empty_set();
+        }
+
+        let mut nodes = first.nodes.clone();
+        for node in second.nodes {
+            let mut next = node.clone();
+            for edge in &mut next.transitions {
+                edge.destination.0 += first.nodes.len();
+            }
+            nodes.push(next);
+        }
+
+        Self {
+            nodes: nodes,
+            start: first.start,
+            accept: Some(NodeID(second.accept.unwrap().0 + first.nodes.len())),
+        }
     }
 
     //pub fn star(operand: Rregex) -> Self
@@ -157,7 +176,7 @@ impl Rregex {
 
         // Consume every character in s.
         for c in s.chars() {
-            let mut next_states = HashSet::new();
+            let mut next_states = std::collections::HashSet::new();
 
             for &state in &current_states {
                 for trans in &self.nodes[state.0].transitions {
@@ -194,7 +213,7 @@ impl Rregex {
 
     // Find all nodes reachable from a set of nodes by 
     // traversing only epsilon transitions.
-    fn epsilon_closure(&self, states: HashSet<NodeID>) -> HashSet<NodeID> {
+    fn epsilon_closure(&self, states: std::collections::HashSet<NodeID>) -> std::collections::HashSet<NodeID> {
         let mut closure = states;
         // stack tracks states whose epsilon transitions need to be explored.
         let mut stack: Vec<NodeID> = closure.iter().copied().collect();
@@ -217,6 +236,7 @@ impl Rregex {
 struct NodeID(usize);
 
 
+#[derive(Clone, Debug)]
 struct Node {
     // A Node owns 0 or more outgoing transitions.
     transitions: Vec<Edge>,
@@ -239,6 +259,7 @@ impl Node {
 }
 
 
+#[derive(Clone, Debug)]
 struct Edge {
     destination: NodeID,     // Index into owner regex's Vec<Node>.
     symbol: Option<char>,

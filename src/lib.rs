@@ -154,7 +154,102 @@ mod tests {
 
     #[test]
     fn check_concat_recognizing() {
-        assert!(false);
+
+        // {} . {} should recognize nothing.
+        assert_rregex_recognizes_finite(
+            Rregex::concat(
+                Rregex::get_empty_set(),
+                Rregex::get_empty_set()
+            ),
+            vec![]
+        );
+
+        // {} . {\epsilon} and {\epsilon} . {} should recognize nothing.
+        assert_rregex_recognizes_finite(
+            Rregex::concat(
+                Rregex::get_empty_set(),
+                Rregex::get_epsilon()
+            ),
+            vec![]
+        );
+        assert_rregex_recognizes_finite(
+            Rregex::concat(
+                Rregex::get_epsilon(),
+                Rregex::get_empty_set()
+            ),
+            vec![]
+        );
+
+        // {} . {'a'} and {'a'} . {} should recognize nothing.
+        assert_rregex_recognizes_finite(
+            Rregex::concat(
+                Rregex::get_empty_set(),
+                Rregex::get_symbol('a')
+            ),
+            vec![]
+        );
+        assert_rregex_recognizes_finite(
+            Rregex::concat(
+                Rregex::get_symbol('a'),
+                Rregex::get_empty_set()
+            ),
+            vec![]
+        );
+
+        // {\epsilon} . {\epsilon} should recognize empty string.
+        assert_rregex_recognizes_finite(
+            Rregex::concat(
+                Rregex::get_epsilon(),
+                Rregex::get_epsilon()
+            ),
+            vec![""]
+        );
+
+        // {\epsilon} . {'a'} and {'a'} . {\epsilon} should recognize "a".
+        assert_rregex_recognizes_finite(
+            Rregex::concat(
+                Rregex::get_epsilon(),
+                Rregex::get_symbol('a')
+            ),
+            vec!["a"]
+        );
+        assert_rregex_recognizes_finite(
+            Rregex::concat(
+                Rregex::get_symbol('a'),
+                Rregex::get_epsilon()
+            ),
+            vec!["a"]
+        );
+
+        // {'a'} . {'a'} should recognize "aa".
+        assert_rregex_recognizes_finite(
+            Rregex::concat(
+                Rregex::get_symbol('a'),
+                Rregex::get_symbol('a')
+            ),
+            vec!["aa"]
+        );
+
+        // {'a'} . {'b'} should recognize "ab".
+        assert_rregex_recognizes_finite(    
+            Rregex::concat(
+                Rregex::get_symbol('a'),
+                Rregex::get_symbol('b')
+            ),
+            vec!["ab"]
+        );
+
+        // {'a'} . {'b'} . {'c'} should recognize "abc".
+        assert_rregex_recognizes_finite(
+            Rregex::concat(
+                Rregex::concat(
+                    Rregex::get_symbol('a'),
+                    Rregex::get_symbol('b')
+                ),
+                Rregex::get_symbol('c')
+            ),
+            vec!["abc"]
+        );
     }
 
 }
