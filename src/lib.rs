@@ -9,39 +9,55 @@ mod tests {
 
     fn assert_rregex_recognizes_finite(e: Rregex, strs_to_recognize: Vec<&str>) {
 
-        // Check empty string
-        let recognizes = e.recognizes("");
-        assert!(recognizes == strs_to_recognize.contains(&""));
+        const MAX_LENGTH_TO_CHECK: usize = 3;
 
-        // Check all combinations of 1 length strings.
-        for c in ' '..='~' {
-            let s = c.to_string();
-            let expected = strs_to_recognize.contains(&s.as_str());
-            let recognizes = e.recognizes(&s);
+        fn check_strings_max_length(e: Rregex, max_length: usize, strs_to_recognize: Vec<&str>) {
+            // Check strings of exactly length max_length.
+            const MIN_CHAR: u8 = b' ';
+            const MAX_CHAR: u8 = b'~';
 
-            assert_eq!(
-                recognizes,
-                expected,
-                "Unexpected recognition result for {:?}",
-                s
-            );
-        }
+            // Keep track of a buffer of length max_length to hold the string being checked.
+            // Initially string is all MIN_CHAR.
+            let mut string_buf = vec![MIN_CHAR; max_length];
 
-        // Check all combinations of 2 length strings.
-        for a in ' '..='~' {
-            for b in ' '..='~' {
-                let s = format!("{}{}", a, b);
-                let expected = strs_to_recognize.contains(&s.as_str());
-                let recognizes = e.recognizes(&s);
+            // Change each element in each spot of string_buf and check.
+            'outer: loop {
+                // The unwrap() used is ok only because this is a test, 
+                // and also we know string is guaranteed valid.
+                let string = String::from_utf8(string_buf.clone()).unwrap();
 
+                // Conduct test.
                 assert_eq!(
-                    recognizes,
-                    expected,
-                    "Unexpected recognition result for {:?}",
-                    s
+                    e.recognizes(&string),
+                    strs_to_recognize.contains(&string.as_str()),
+                    "Unexpected recognition result for input `{:?}`", string
                 );
+
+                // Check base case: max_length is the minimum value possible.
+                if max_length == 0 {
+                    return;
+                }
+
+                for i in (0..max_length).rev() {
+                    if string_buf[i] < MAX_CHAR {
+                        string_buf[i] += 1;
+                        break;
+                    } else {
+                        string_buf[i] = MIN_CHAR;
+                        if i == 0 {
+                            // We have exhausted all combinations of length max_length.
+                            break 'outer;
+                        }
+                    }
+                }
             }
+
+            // Check all shorter strings recursively.
+            check_strings_max_length(e, max_length - 1, strs_to_recognize);
         }
+
+        check_strings_max_length(e, MAX_LENGTH_TO_CHECK, strs_to_recognize);
+
     }
 
     #[test]
