@@ -360,4 +360,56 @@ mod tests {
 
     }
 
+    #[test]
+    fn check_combinations_recognizing() {
+
+        // Create Rregexs to reuse.
+        let a = Rregex::get_symbol('a');
+        let b = Rregex::get_symbol('b');
+        let c = Rregex::get_symbol('c');
+
+        // ({a} | {b})* . {c}
+        let a_or_b_star_then_c = Rregex::concat(
+                &Rregex::star(
+                    &Rregex::union(&a, &b)
+                ),
+                &c
+            );
+        assert_rregex_recognizes_finite(
+            a_or_b_star_then_c.clone(), 
+            vec![
+                "c", 
+                "ac", "bc", 
+                "aac", "abc", "bac", "bbc", 
+                "aaac", "aabc", "abac", "abbc", "baac", "babc", "bbac", "bbbc"
+            ], 
+            4
+        );
+
+        // (({a} | {b})* . {c}) | ({a}* . {b}*)
+        let a_or_b_star_then_c_or_a_star_then_b_star = Rregex::union(
+            &a_or_b_star_then_c,
+            &Rregex::concat(
+                &Rregex::star(&a),
+                &Rregex::star(&b)
+            )
+        );
+        assert_rregex_recognizes_finite(
+            a_or_b_star_then_c_or_a_star_then_b_star.clone(),
+            vec![
+                "c", 
+                "ac", "bc", 
+                "aac", "abc", "bac", "bbc", 
+                "aaac", "aabc", "abac", "abbc", "baac", "babc", "bbac", "bbbc",
+                "", "a", "aa", "aaa", "aaaa",
+                "b", "ab", "aab", "aaab",
+                "bb", "abb", "aabb", "aaabb",
+                "bbb", "abbb",
+                "bbbb"
+            ],
+            4
+        );
+
+    }
+
 }
