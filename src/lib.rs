@@ -7,11 +7,10 @@ mod tests {
     use super::*;
     use rregex::Rregex;
 
-    fn assert_rregex_recognizes_finite(e: Rregex, strs_to_recognize: Vec<&str>) {
+    fn assert_rregex_recognizes_finite(e: Rregex, strs_to_recognize: Vec<&str>, max_length_to_check: usize) {
 
         // Each call to assert_rregex_recognizes_finite() takes on the order of
-        // O((MAX_CHAR - MIN_CHAR) ^ MAX_LENGTH_TO_CHECK) time, so keep small.
-        const MAX_LENGTH_TO_CHECK: usize = 3;
+        // O((MAX_CHAR - MIN_CHAR) ^ max_length_to_check) time, so keep small.
 
         fn check_strings_max_length(e: Rregex, max_length: usize, strs_to_recognize: Vec<&str>) {
 
@@ -63,7 +62,7 @@ mod tests {
             check_strings_max_length(e, max_length - 1, strs_to_recognize);
         }
 
-        check_strings_max_length(e, MAX_LENGTH_TO_CHECK, strs_to_recognize);
+        check_strings_max_length(e, max_length_to_check, strs_to_recognize);
 
     }
 
@@ -71,21 +70,21 @@ mod tests {
     fn check_empty_set_recognizing() {
         // Empty set should not recognize anything.
         let e = Rregex::get_empty_set();
-        assert_rregex_recognizes_finite(e, vec![]);
+        assert_rregex_recognizes_finite(e, vec![], 2);
     }
 
     #[test]
     fn check_epsilon_recognizing() {
         // {\epsilon} should only recognize empty string.
         let e = Rregex::get_epsilon();
-        assert_rregex_recognizes_finite(e, vec![""]);
+        assert_rregex_recognizes_finite(e, vec![""], 2);
     }
 
     #[test]
     fn check_a_recognizing() {
         // {'a'} should only recognize "a".
         let e = Rregex::get_symbol('a');
-        assert_rregex_recognizes_finite(e, vec!["a"]);
+        assert_rregex_recognizes_finite(e, vec!["a"], 3);
     }
 
     #[test]
@@ -95,7 +94,7 @@ mod tests {
         let empty_1 = Rregex::get_empty_set();
         let empty_2 = Rregex::get_empty_set();
         let e = Rregex::union(empty_1, empty_2);
-        assert_rregex_recognizes_finite(e, vec![]);
+        assert_rregex_recognizes_finite(e, vec![], 2);
 
         // {} U {\epsilon} and {\epsilon} U {} should recognize empty string.
         assert_rregex_recognizes_finite(
@@ -103,14 +102,16 @@ mod tests {
                 Rregex::get_empty_set(), 
                 Rregex::get_epsilon()
             ), 
-            vec![""]
+            vec![""],
+            2
         );
         assert_rregex_recognizes_finite(
             Rregex::union(
                 Rregex::get_epsilon(), 
                 Rregex::get_empty_set()
             ), 
-            vec![""]
+            vec![""],
+            2
         );
 
         // {} U {'a'} and {'a'} U {} should only recognize "a".
@@ -119,14 +120,16 @@ mod tests {
                 Rregex::get_empty_set(), 
                 Rregex::get_symbol('a')
             ), 
-            vec!["a"]
+            vec!["a"],
+            3
         );
         assert_rregex_recognizes_finite(
             Rregex::union(
                 Rregex::get_symbol('a'),
                 Rregex::get_empty_set() 
             ), 
-            vec!["a"]
+            vec!["a"],
+            3
         );
 
         // {\epsilon} U {\epsilon} should only recognize empty string.
@@ -135,7 +138,8 @@ mod tests {
                 Rregex::get_epsilon(),
                 Rregex::get_epsilon() 
             ), 
-            vec![""]
+            vec![""],
+            2
         );
 
         // {\epsilon} U {'a'} and {'a'} U {\epsilon} should recognize "a" and empty string.
@@ -144,14 +148,16 @@ mod tests {
                 Rregex::get_epsilon(),
                 Rregex::get_symbol('a') 
             ), 
-            vec!["", "a"]
+            vec!["", "a"],
+            3
         );
         assert_rregex_recognizes_finite(
             Rregex::union(
                 Rregex::get_symbol('a') ,
                 Rregex::get_epsilon()
             ), 
-            vec!["", "a"]
+            vec!["", "a"],
+            3
         );
 
         // {'a'} U {'a'} should only recognize "a".
@@ -160,7 +166,8 @@ mod tests {
                 Rregex::get_symbol('a'),
                 Rregex::get_symbol('a')
             ),
-            vec!["a"]
+            vec!["a"],
+            3
         );
 
         // {'a'} U {'b'} should recognize "a" and "b".
@@ -169,7 +176,8 @@ mod tests {
                 Rregex::get_symbol('a'),
                 Rregex::get_symbol('b')
             ),
-            vec!["a", "b"]
+            vec!["a", "b"],
+            3
         );
         
         
@@ -184,7 +192,8 @@ mod tests {
                 Rregex::get_empty_set(),
                 Rregex::get_empty_set()
             ),
-            vec![]
+            vec![],
+            2
         );
 
         // {} . {\epsilon} and {\epsilon} . {} should recognize nothing.
@@ -193,14 +202,16 @@ mod tests {
                 Rregex::get_empty_set(),
                 Rregex::get_epsilon()
             ),
-            vec![]
+            vec![],
+            2
         );
         assert_rregex_recognizes_finite(
             Rregex::concat(
                 Rregex::get_epsilon(),
                 Rregex::get_empty_set()
             ),
-            vec![]
+            vec![],
+            2
         );
 
         // {} . {'a'} and {'a'} . {} should recognize nothing.
@@ -209,14 +220,16 @@ mod tests {
                 Rregex::get_empty_set(),
                 Rregex::get_symbol('a')
             ),
-            vec![]
+            vec![],
+            2
         );
         assert_rregex_recognizes_finite(
             Rregex::concat(
                 Rregex::get_symbol('a'),
                 Rregex::get_empty_set()
             ),
-            vec![]
+            vec![],
+            2
         );
 
         // {\epsilon} . {\epsilon} should recognize empty string.
@@ -225,7 +238,8 @@ mod tests {
                 Rregex::get_epsilon(),
                 Rregex::get_epsilon()
             ),
-            vec![""]
+            vec![""],
+            2
         );
 
         // {\epsilon} . {'a'} and {'a'} . {\epsilon} should recognize "a".
@@ -234,14 +248,16 @@ mod tests {
                 Rregex::get_epsilon(),
                 Rregex::get_symbol('a')
             ),
-            vec!["a"]
+            vec!["a"],
+            3
         );
         assert_rregex_recognizes_finite(
             Rregex::concat(
                 Rregex::get_symbol('a'),
                 Rregex::get_epsilon()
             ),
-            vec!["a"]
+            vec!["a"],
+            3
         );
 
         // {'a'} . {'a'} should recognize "aa".
@@ -250,7 +266,8 @@ mod tests {
                 Rregex::get_symbol('a'),
                 Rregex::get_symbol('a')
             ),
-            vec!["aa"]
+            vec!["aa"],
+            4
         );
 
         // {'a'} . {'b'} should recognize "ab".
@@ -259,7 +276,8 @@ mod tests {
                 Rregex::get_symbol('a'),
                 Rregex::get_symbol('b')
             ),
-            vec!["ab"]
+            vec!["ab"],
+            4
         );
 
         // {'a'} . {'b'} . {'c'} should recognize "abc".
@@ -271,8 +289,75 @@ mod tests {
                 ),
                 Rregex::get_symbol('c')
             ),
-            vec!["abc"]
+            vec!["abc"],
+            5
         );
+    }
+
+    #[test]
+    fn check_star_recognizing() {
+
+        // {}* should recognize empty string.
+        assert_rregex_recognizes_finite(
+            Rregex::star(Rregex::get_empty_set()),
+            vec![""],
+            3
+        );
+
+        // {\epsilon}* should recognize empty string.
+        assert_rregex_recognizes_finite(
+            Rregex::star(Rregex::get_epsilon()),
+            vec![""],
+            3
+        );
+
+        // {'a'}* should recognize empty string, "a", "aa", "aaa", etc.
+        assert_rregex_recognizes_finite(
+            Rregex::star(Rregex::get_symbol('a')),
+            vec!["", "a", "aa", "aaa", "aaaa", "aaaaa"],
+            5
+        );
+
+        // {'a'}* . {'b'} should recognize "b", "ab", "aab", "aaab", etc.
+        assert_rregex_recognizes_finite(
+            Rregex::concat(
+                Rregex::star(Rregex::get_symbol('a')),
+                Rregex::get_symbol('b')
+            ),
+            vec!["b", "ab", "aab", "aaab", "aaaab"],
+            5
+        );
+
+        // {'a'} . {'b'}* should recognize "a", "ab", "abb", "abbb", etc.
+        assert_rregex_recognizes_finite(
+            Rregex::concat(
+                Rregex::get_symbol('a'),
+                Rregex::star(Rregex::get_symbol('b'))
+            ),
+            vec!["a", "ab", "abb", "abbb", "abbbb"],
+            5
+        );
+
+        // {'a'}* . {'b'}* should recognize {a*b*}.
+        assert_rregex_recognizes_finite(
+            Rregex::concat(
+                Rregex::star(Rregex::get_symbol('a')),
+                Rregex::star(Rregex::get_symbol('b'))
+            ),
+            vec!["", "a", "aa", "aaa", "b", "ab", "aab", "bb", "abb", "bbb"],
+            3
+        );
+
+        // {'a'}* | {'b'}* should recognize {a*, b*}.
+        assert_rregex_recognizes_finite(
+            Rregex::union(
+                Rregex::star(Rregex::get_symbol('a')),
+                Rregex::star(Rregex::get_symbol('b'))
+            ),
+            vec!["", "a", "aa", "aaa", "b", "bb", "bbb"],
+            3
+        );
+
     }
 
 }

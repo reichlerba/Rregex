@@ -158,7 +158,26 @@ impl Rregex {
         }
     }
 
-    //pub fn star(operand: Rregex) -> Self
+    pub fn star(operand: Rregex) -> Self {
+
+        let mut nodes = operand.nodes.clone();
+
+        let Some(accept_nodeid) = operand.accept else {
+            // opernand recognizes the empty set (nothing).
+            // {}* = {\epsilon}
+            return Rregex::get_epsilon();
+        };
+
+        // Add transitions between start and accept.
+        nodes[accept_nodeid.0].add_outgoing_transition(operand.start, None);
+        nodes[operand.start.0].add_outgoing_transition(accept_nodeid, None);
+
+        Self {
+            nodes: nodes,
+            start: operand.start,
+            accept: Some(accept_nodeid),
+        }
+    }
 
 
     // -- USABILITY INTERFACE --
