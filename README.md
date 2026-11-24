@@ -1,6 +1,6 @@
 # rregex
 
-[![License](https://shields.io)](LICENSE)
+[![License: MIT](https://shields.io)](#license)
 
 A zero-dependency Rust library to recognize regular expressions defined inductively. 
 
