@@ -1,6 +1,6 @@
 # rregex
 
-[![License: MIT](https://shields.io)](#license)
+[![GitHub License](https://img.shields.io/github/license/reichlerba/Rregex)](#license)
 
 A zero-dependency Rust library to recognize regular expressions defined inductively. 
 
@@ -124,4 +124,4 @@ cargo doc --open
 
 ## License
 
-Licensed under MIT license ([LICENSE-MIT](LICENSE-MIT))
+Licensed under MIT license ([LICENSE](LICENSE))
