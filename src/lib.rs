@@ -9,12 +9,17 @@ mod tests {
 
     fn assert_rregex_recognizes_finite(e: Rregex, strs_to_recognize: Vec<&str>) {
 
+        // Each call to assert_rregex_recognizes_finite() takes on the order of
+        // O((MAX_CHAR - MIN_CHAR) ^ MAX_LENGTH_TO_CHECK) time, so keep small.
         const MAX_LENGTH_TO_CHECK: usize = 3;
 
         fn check_strings_max_length(e: Rregex, max_length: usize, strs_to_recognize: Vec<&str>) {
+
+            // For full range of printable ASCII, use b' ' to b'~'.
+            const MIN_CHAR: u8 = b'a';
+            const MAX_CHAR: u8 = b'f';
+
             // Check strings of exactly length max_length.
-            const MIN_CHAR: u8 = b' ';
-            const MAX_CHAR: u8 = b'~';
 
             // Keep track of a buffer of length max_length to hold the string being checked.
             // Initially string is all MIN_CHAR.
@@ -30,10 +35,12 @@ mod tests {
                 assert_eq!(
                     e.recognizes(&string),
                     strs_to_recognize.contains(&string.as_str()),
-                    "Unexpected recognition result for input `{:?}`", string
+                    "Unexpected recognition result for input {:?}", string
                 );
 
                 // Check base case: max_length is the minimum value possible.
+                // Base case needs to be checked after testing for empty string,
+                // but within 'outer so we can still break out.
                 if max_length == 0 {
                     return;
                 }

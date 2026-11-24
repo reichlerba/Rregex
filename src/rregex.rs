@@ -135,19 +135,26 @@ impl Rregex {
             return Rregex::get_empty_set();
         }
 
+        let first_nodes_len = first.nodes.len();
         let mut nodes = first.nodes.clone();
         for node in second.nodes {
             let mut next = node.clone();
             for edge in &mut next.transitions {
-                edge.destination.0 += first.nodes.len();
+                edge.destination.0 += first_nodes_len;
             }
             nodes.push(next);
         }
+        
+        // Transition from first.accept to second.start on epsilon.
+        nodes[first.accept.unwrap().0].add_outgoing_transition(
+            NodeID(second.start.0 + first_nodes_len),
+            None
+        );
 
         Self {
             nodes: nodes,
             start: first.start,
-            accept: Some(NodeID(second.accept.unwrap().0 + first.nodes.len())),
+            accept: Some(NodeID(second.accept.unwrap().0 + first_nodes_len)),
         }
     }
 
