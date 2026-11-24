@@ -412,4 +412,53 @@ mod tests {
 
     }
 
+    #[test]
+    fn check_readme_example() {
+        let mut digit = Rregex::get_empty_set();
+        for c in '0'..='9' {
+            let c = Rregex::get_symbol(c);
+            digit = Rregex::union(&digit, &c);
+        }
+        // num recognizes a string of any single digit, from 0 to 9.
+
+        let mut nonzero_digit = Rregex::get_empty_set();
+        for c in '1'..='9' {
+            let c = Rregex::get_symbol(c);
+            nonzero_digit = Rregex::union(&nonzero_digit, &c);
+        }
+        // nonzero_digit recognizes a string of any single positive digit, from 1 to 9.
+
+        let zero = Rregex::get_symbol('0');
+        // zero only recognizes the string "0".
+
+        let digit_star = Rregex::star(&digit);
+        // digit_star recognizes strings like: "", "00000700", "12", "1337", etc.
+
+        let natural_num = Rregex::concat(&nonzero_digit, &digit_star);
+        // natural_num recognizes a string of any natural number (no decimal point and greater than or equal to 1) without leading 0s.
+
+        let whole_num = Rregex::union(&zero, &natural_num);
+        // whole_num recognizes a string of any whole number (no decimal point and greater than or equal to 0) without leading 0s (except for "0").
+
+        let integer = Rregex::concat(
+            &Rregex::union(
+                &Rregex::get_symbol('-'),
+                &Rregex::get_epsilon()
+            ),
+            &whole_num
+        );
+        // integer recognizes a string of any integer number (no decimal point) without leading 0s (after the '-' if there is one, and not including "0" and "-0").
+
+        assert!(integer.recognizes("1"));
+        assert!(integer.recognizes("1234"));
+        assert!(integer.recognizes("-9999999"));
+        assert!(integer.recognizes("0"));
+        assert!(integer.recognizes("-0"));
+
+        assert!(!integer.recognizes("+1"));
+        assert!(!integer.recognizes("0x7"));
+        assert!(!integer.recognizes("015"));
+        assert!(!integer.recognizes("2^10"));
+    }
+
 }

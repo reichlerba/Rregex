@@ -86,7 +86,7 @@ fn main() {
     let integer = Rregex::concat(
         &Rregex::union(
             &Rregex::get_symbol('-'),
-            &Rregex::get_empty_set()
+            &Rregex::get_epsilon()
         ),
         &whole_num
     );
