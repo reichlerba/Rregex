@@ -61,66 +61,51 @@ impl Rregex {
         }
     }
 
-    pub fn union(mut opt_1: Rregex, mut opt_2: Rregex) -> Self {
-        // Take necessary values from opt_1.
-        let (nodes_1, start_1, accept_1) = opt_1.extract_nodes_start_accept();
-        drop(opt_1);
+    // The language R|S which is the union between R and S accepts
+    // strings in both the language of R and the language of S.
+    pub fn union(opt_1: &Rregex, opt_2: &Rregex) -> Self {
+        // Unions should have a start node transitioning to start of opt_1 and opt_2
+        // and an accept node which opt_1 and opt_2 transition to, on epsilon.
 
-        // Check if opt_1 recognizes the empty set (nothing).
-        // R U {} = R
-        if accept_1.is_none() {
-            // Return opt_2.
-            return opt_2;
-        }
-        
-        // Take necessary values from opt_2
-        let (mut nodes_2, start_2_from_opt_2, accept_2_from_opt_2) = opt_2.extract_nodes_start_accept();
-        drop(opt_2);
+        // Check for if we can just return one of the operands.
+        let Some(opt_1_accept_nodeid) = opt_1.accept else {
+            // opt_1 recognizes the empty set (nothing).
+            // R | {} = R
+            return opt_2.clone();
+        };
+        let Some(opt_2_accept_nodeid) = opt_2.accept else {
+            // opt_2 recognizes the empty set (nothing).
+            // R | {} = R
+            return opt_1.clone();
+        };
 
-        // Check if opt_2 recognizes the empty set (nothing).
-        // R U {} = R
-        if accept_2_from_opt_2.is_none() {
-            // Return opt_1 by reconstructing it.
-            return Self {
-                nodes: nodes_1,
-                start: start_1,
-                accept: accept_1,
-            };
-        }
+        let opt_1_nodes_len = opt_1.nodes.len();
 
-        // Neither accept_1 nor accept_2 are None.
-        let accept_1_index = accept_1.unwrap().0;
-        let accept_2_index = accept_2_from_opt_2.unwrap().0 + nodes_1.len();
-        // Prepare fields and manipulate graphs.
-        // nodes is [nodes_1, nodes_2, start_node, accept_node].
-        let start_2 = NodeID(start_2_from_opt_2.0 + nodes_1.len());
-        let start_nodeid = NodeID(nodes_1.len() + nodes_2.len());
-        let accept_nodeid = NodeID(start_nodeid.0 + 1);
-        
-        let accept_node = Node::new();
-        let mut start_node = Node::new();
-        // start_node transitions to start of opt_1 and start of opt_2 on epsilon.
-        start_node.add_outgoing_transition(start_1, None);
-        start_node.add_outgoing_transition(start_2, None);
-
-        // Adjust internal destinations in nodes_2.
-        for node in &mut nodes_2 {
-            for edge in &mut node.transitions {
-                edge.destination.0 += nodes_1.len();
+        // Construct set containing all nodes.
+        let mut nodes = opt_1.nodes.clone();
+        for node in opt_2.nodes.iter().cloned() {
+            let mut next = node.clone();
+            for edge in &mut next.transitions {
+                edge.destination.0 += opt_1_nodes_len;
             }
+            nodes.push(next);
         }
 
-        let mut nodes: Vec<Node> = nodes_1.into_iter()  // opt_1 nodes
-                .chain(nodes_2.into_iter())             // opt_2 nodes
-                .chain(std::iter::once(start_node))     // new start_node
-                .chain(std::iter::once(accept_node))    // new accept_node
-                .collect();
+        // Configure accepts.
+        let accept = Node::new();
+        let accept_nodeid = NodeID(nodes.len());
+        nodes[opt_1_accept_nodeid.0].add_outgoing_transition(accept_nodeid, None);
+        nodes[opt_2_accept_nodeid.0 + opt_1_nodes_len].add_outgoing_transition(accept_nodeid, None);
+        nodes.push(accept);
 
-        // accept_1 and accept_2 transition to accept_node on epsilon.
-        nodes[accept_1_index].add_outgoing_transition(accept_nodeid, None);
-        nodes[accept_2_index].add_outgoing_transition(accept_nodeid, None);
+        // Configure starts.
+        let mut start = Node::new();
+        let start_nodeid = NodeID(nodes.len());
+        start.add_outgoing_transition(opt_1.start, None);
+        start.add_outgoing_transition(opt_2.start + opt_1_nodes_len, None);
+        nodes.push(start);
 
-        // Return constructed Self.
+        // Return new Rregex.
         Self {
             nodes: nodes,
             start: start_nodeid,
@@ -128,7 +113,7 @@ impl Rregex {
         }
     }
 
-    pub fn concat(first: Rregex, second: Rregex) -> Self {
+    pub fn concat(first: &Rregex, second: &Rregex) -> Self {
 
         // Check if either recognizes empty set (nothing).
         if first.accept.is_none() || second.accept.is_none() {
@@ -137,7 +122,7 @@ impl Rregex {
 
         let first_nodes_len = first.nodes.len();
         let mut nodes = first.nodes.clone();
-        for node in second.nodes {
+        for node in second.nodes.iter().cloned() {
             let mut next = node.clone();
             for edge in &mut next.transitions {
                 edge.destination.0 += first_nodes_len;
@@ -158,7 +143,7 @@ impl Rregex {
         }
     }
 
-    pub fn star(operand: Rregex) -> Self {
+    pub fn star(operand: &Rregex) -> Self {
 
         let mut nodes = operand.nodes.clone();
 
@@ -228,15 +213,6 @@ impl Rregex {
 
     // -- PRIVATE HELPERS AND MUTATORS --
 
-    // Transfer ownership of all fields out of self
-    fn extract_nodes_start_accept(&mut self) -> (Vec<Node>, NodeID, Option<NodeID>) {
-        (
-            std::mem::take(&mut self.nodes), 
-            std::mem::take(&mut self.start), 
-            std::mem::take(&mut self.accept)
-        )
-    }
-
     // Find all nodes reachable from a set of nodes by 
     // traversing only epsilon transitions.
     fn epsilon_closure(&self, states: std::collections::HashSet<NodeID>) -> std::collections::HashSet<NodeID> {
@@ -260,6 +236,22 @@ impl Rregex {
 
 #[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
 struct NodeID(usize);
+
+impl std::ops::Add<Self> for NodeID {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        NodeID(self.0 + rhs.0)
+    }
+}
+
+impl std::ops::Add<usize> for NodeID {
+    type Output = Self;
+
+    fn add(self, rhs: usize) -> Self::Output {
+        NodeID(self.0 + rhs)
+    }
+}
 
 
 #[derive(Clone, Debug)]
