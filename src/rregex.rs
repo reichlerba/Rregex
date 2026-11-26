@@ -13,6 +13,8 @@
 // Regular expressions can be implemented internally using 
 // an NFA structure of nodes and state transitions.
 
+
+/// Represents a single regular expression.
 #[derive(Clone, Debug)]
 pub struct Rregex {
     nodes: Vec<Node>,       // All Node objects owned by this Rregex.
@@ -24,6 +26,7 @@ impl Rregex {
 
     // -- CONSTRUCTORS --
 
+    /// Construct a regular expression that recognizes nothing.
     pub fn get_empty_set() -> Self {
         // Empty set NFA has a single start and no accept.
         Self {
@@ -33,6 +36,7 @@ impl Rregex {
         }
     }
 
+    /// Construct a regular expression that recognizes only the empty string, "".
     pub fn get_epsilon() -> Self {
         // {\epsilon} has a single state which is start and accept.
         Self {
@@ -44,6 +48,9 @@ impl Rregex {
 
     // The language {s} is denoted by the regex s iff s \in alphabet.
     // get_symbol(s) returns the Rregex s.
+    /// Construct a regular expression that recognizes only the single character "s".
+    /// # Arguments
+    /// * `s` - A single character from the alphabet.
     pub fn get_symbol(s: char) -> Self {
         // Has a start state which transitions 
         // to an accept state on input s.
@@ -63,6 +70,10 @@ impl Rregex {
 
     // The language R|S which is the union between R and S accepts
     // strings in both the language of R and the language of S.
+    /// Construct a regular expression that recognizes all elements in the language of either `opt_1` or `opt_2`.
+    /// # Arguments
+    /// * `opt_1` - A regular expression that recognizes strings we want to recognize.
+    /// * `opt_2` - A regular expression that recognizes strings we want to recognize.
     pub fn union(opt_1: &Rregex, opt_2: &Rregex) -> Self {
         // Unions should have a start node transitioning to start of opt_1 and opt_2
         // and an accept node which opt_1 and opt_2 transition to, on epsilon.
@@ -113,6 +124,10 @@ impl Rregex {
         }
     }
 
+    /// Construct a regular expression that recognizes all strings found by concatenating a string recognized by `second` to the end of a string recognized by `first`.
+    /// # Arguments
+    /// * `first` - A regular expression whose accepted strings should come first.
+    /// * `second` - A regular expression whose accepted strings should come second.
     pub fn concat(first: &Rregex, second: &Rregex) -> Self {
 
         // Check if either recognizes empty set (nothing).
@@ -143,6 +158,9 @@ impl Rregex {
         }
     }
 
+    /// Construct a regular expression that recognizes all strings found by repeating zero or more times a string recognized by `operand`.
+    /// # Arguments
+    /// * `operand` - A regular expression whose accepted strings should be repeated.
     pub fn star(operand: &Rregex) -> Self {
 
         let mut nodes = operand.nodes.clone();
@@ -168,6 +186,9 @@ impl Rregex {
     // -- USABILITY INTERFACE --
 
     // Determine whether self recognizes s.
+    /// Determine whether the regular expression recognizes the given string.
+    /// # Arguments
+    /// * `s` - A string slice to test against the regular expression.
     pub fn recognizes(&self, s: &str) -> bool {
         // Consume every char in s by repeatedly performing 
         // epsilon closures, traversing any edges labeled the

@@ -46,9 +46,9 @@ Combine regular expressions to create a new `Rregex` using one of the following 
 - `Rregex::union(r: &Rregex, s: &Rregex)`
     - To retrieve the regular expression which recognizes all strings recognized by `r` and all strings recognizes by `s`.
 - `Rregex::concat(r: &Rregex, s: &Rregex)`
-    - To retrieve the regular expression which recognizes all strings found by concatonating a string recognized by `s` to the end of a string recognized by `r`.
+    - To retrieve the regular expression which recognizes all strings found by concatenating a string recognized by `s` to the end of a string recognized by `r`.
 - `Rregex::star(r: &Rregex)`
-    - To retrieve the regular expression which recognizes the Kleene star of `r`, which includes strings made up of any number of strings recognized by `r` concatonated together, including the empty string.
+    - To retrieve the regular expression which recognizes the Kleene star of `r`, which includes strings made up of any number of strings recognized by `r` concatenated together, including the empty string.
 
 Use `Rregex.recognizes(s: &str) -> bool` to determine whether a given `Rregex` recognizes `s`.
 
@@ -124,4 +124,4 @@ cargo doc --open
 
 ## License
 
-Licensed under MIT license ([LICENSE](LICENSE))
+Licensed under MIT license ([LICENSE](https://github.com/reichlerba/Rregex/blob/main/LICENSE))
